@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2026-02-26T13:47:04.452546",
+    "username": "samir",
+    "action": "LOGOUT",
+    "details": "User logged out"
+  },
+  {
+    "timestamp": "2026-02-26T13:47:12.798224",
+    "username": "samir",
+    "action": "LOGIN",
+    "details": "User logged in"
+  },
+  {
+    "timestamp": "2026-03-09T13:51:38.068219",
+    "username": "samir",
+    "action": "LOGIN",
+    "details": "User logged in"
+  },
+  {
+    "timestamp": "2026-03-09T17:30:37.210198",
+    "username": "samir",
+    "action": "LOGIN",
+    "details": "User logged in"
+  },
+  {
+    "timestamp": "2026-03-10T19:11:49.511612",
+    "username": "samir",
+    "action": "LOGIN",
+    "details": "User logged in"
+  },
+  {
+    "timestamp": "2026-03-10T21:27:47.361642",
+    "username": "samir",
+    "action": "LOGIN",
+    "details": "User logged in"
+  }
+]

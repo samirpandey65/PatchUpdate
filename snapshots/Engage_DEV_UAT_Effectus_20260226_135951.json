@@ -1,0 +1,8 @@
+{
+  "timestamp": "20260226_135951",
+  "server": "Engage_DEV_UAT_Effectus",
+  "updates": [
+    "python3-software-properties/noble-updates 0.99.49.4 all [upgradable from: 0.99.49.3]",
+    "software-properties-common/noble-updates 0.99.49.4 all [upgradable from: 0.99.49.3]"
+  ]
+}

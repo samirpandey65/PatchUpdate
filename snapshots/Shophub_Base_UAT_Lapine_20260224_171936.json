@@ -1,0 +1,8 @@
+{
+  "timestamp": "20260224_171936",
+  "server": "Shophub_Base_UAT_Lapine",
+  "updates": [
+    "Amazon Linux 2023 repository                     38 kB/s | 3.6 kB     00:00",
+    "Amazon Linux 2023 Kernel Livepatch repository    35 kB/s | 2.9 kB     00:00"
+  ]
+}

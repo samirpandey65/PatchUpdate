@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snapshots - Patch Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; }
+        .sidebar { width: 250px; background: white; height: 100vh; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px 0; }
+        .sidebar-header { padding: 0 20px 20px 20px; border-bottom: 2px solid #e2e8f0; }
+        .sidebar-header h2 { color: #667eea; font-size: 20px; margin: 0; }
+        .sidebar-menu { list-style: none; padding: 20px 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 15px 20px; color: #333; text-decoration: none; transition: all 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu a:hover { background: #f7fafc; border-left-color: #667eea; color: #667eea; }
+        .sidebar-menu a.active { background: #e3f2fd; border-left-color: #667eea; color: #667eea; font-weight: bold; }
+        .main-content { margin-left: 250px; padding: 20px; flex: 1; }
+        .page-header { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .page-header h1 { color: #667eea; font-size: 32px; margin-bottom: 10px; }
+        .action-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: 600; color: white; margin-right: 10px; }
+        .btn-primary { background: #667eea; }
+        .btn-success { background: #48bb78; }
+        .btn-danger { background: #f56565; }
+        .btn-warning { background: #ed8936; }
+        .btn:hover { transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background: #f7fafc; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto; }
+        .close { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #999; }
+        .close:hover { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>🖥️ Patch Manager</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="/">📊 Dashboard</a></li>
+            <li><a href="/scan">🔍 Scan Servers</a></li>
+            <li><a href="/install">⚡ Install Updates</a></li>
+            <li><a href="/snapshot" class="active">📸 Snapshots</a></li>
+            <li><a href="/reports">📄 Reports</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📸 Snapshot Management</h1>
+            <p>View, compare, and manage server snapshots</p>
+        </div>
+        
+        <div class="action-card">
+            <h2>Create New Snapshot</h2>
+            <button class="btn btn-success" onclick="showCreateModal()">+ Create Snapshot</button>
+        </div>
+        
+        <div class="action-card">
+            <h2>Existing Snapshots</h2>
+            <button class="btn btn-primary" onclick="loadSnapshots()">🔄 Refresh List</button>
+            <button class="btn btn-warning" onclick="showCompareModal()">📊 Compare Snapshots</button>
+            <table id="snapshotsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Server</th>
+                        <th>Filename</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="snapshotsBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Create Snapshot Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('createModal')">&times;</span>
+            <h2>Create Snapshot</h2>
+            <p style="margin: 15px 0; color: #666;">Select server(s) to snapshot:</p>
+            <select id="serverSelect" multiple style="width: 100%; height: 200px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                <option value="">All Servers</option>
+            </select>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="createSnapshot()">Create</button>
+                <button class="btn btn-danger" onclick="closeModal('createModal')">Cancel</button>
+            </div>
+            <div id="createOutput" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+    
+    <!-- Details Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('detailsModal')">&times;</span>
+            <h2>Snapshot Details</h2>
+            <div id="detailsContent"></div>
+        </div>
+    </div>
+    
+    <!-- Compare Modal -->
+    <div id="compareModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('compareModal')">&times;</span>
+            <h2>Compare Snapshots</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <div>
+                    <label>Snapshot 1:</label>
+                    <select id="compare1" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;"></select>
+                </div>
+                <div>
+                    <label>Snapshot 2:</label>
+                    <select id="compare2" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;"></select>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="compareSnapshots()">Compare</button>
+            <div id="compareContent" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+    
+    <script>
+        let allSnapshots = [];
+        
+        async function loadServers() {
+            const response = await fetch('/api/servers');
+            const servers = await response.json();
+            const select = document.getElementById('serverSelect');
+            select.innerHTML = '<option value="">All Servers</option>';
+            servers.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.name;
+                option.textContent = s.name;
+                select.appendChild(option);
+            });
+        }
+        
+        async function loadSnapshots() {
+            const response = await fetch('/api/snapshots/list');
+            const data = await response.json();
+            allSnapshots = data.snapshots || [];
+            
+            const tbody = document.getElementById('snapshotsBody');
+            tbody.innerHTML = '';
+            
+            if (allSnapshots.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">No snapshots found</td></tr>';
+                return;
+            }
+            
+            allSnapshots.forEach(snap => {
+                const row = `<tr>
+                    <td>${snap.timestamp}</td>
+                    <td>${snap.server}</td>
+                    <td>${snap.filename}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="viewDetails('${snap.filename}')">👁️ View</button>
+                        <button class="btn btn-success" onclick="downloadSnapshot('${snap.filename}')">⬇️ Download</button>
+                        <button class="btn btn-warning" onclick="rollbackSnapshot('${snap.filename}', '${snap.server}')">↩️ Rollback</button>
+                        <button class="btn btn-danger" onclick="deleteSnapshot('${snap.filename}')">🗑️ Delete</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+            
+            // Populate compare dropdowns
+            const compare1 = document.getElementById('compare1');
+            const compare2 = document.getElementById('compare2');
+            compare1.innerHTML = '';
+            compare2.innerHTML = '';
+            allSnapshots.forEach(snap => {
+                compare1.innerHTML += `<option value="${snap.filename}">${snap.timestamp} - ${snap.server}</option>`;
+                compare2.innerHTML += `<option value="${snap.filename}">${snap.timestamp} - ${snap.server}</option>`;
+            });
+        }
+        
+        function showCreateModal() {
+            document.getElementById('createModal').style.display = 'block';
+            loadServers();
+        }
+        
+        function showCompareModal() {
+            if (allSnapshots.length < 2) {
+                alert('Need at least 2 snapshots to compare');
+                return;
+            }
+            document.getElementById('compareModal').style.display = 'block';
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        
+        async function createSnapshot() {
+            const select = document.getElementById('serverSelect');
+            const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value).filter(v => v);
+            const output = document.getElementById('createOutput');
+            output.innerHTML = '<p>Creating snapshot...</p>';
+            
+            try {
+                if (selectedOptions.length > 0) {
+                    for (const serverName of selectedOptions) {
+                        const response = await fetch('/api/snapshot', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({server: serverName})
+                        });
+                        const data = await response.json();
+                        output.innerHTML += `<p style="color:#48bb78;">✓ ${serverName}: ${data.snapshot}</p>`;
+                    }
+                } else {
+                    const response = await fetch('/api/snapshot', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({server: null})
+                    });
+                    const data = await response.json();
+                    output.innerHTML = `<p style="color:#48bb78;">✓ Snapshot created: ${data.snapshot}</p>`;
+                }
+                loadSnapshots();
+            } catch (error) {
+                output.innerHTML = `<p style="color:#f56565;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function viewDetails(filename) {
+            const response = await fetch(`/api/snapshots/details/${filename}`);
+            const data = await response.json();
+            
+            let html = `<h3>Timestamp: ${data.timestamp}</h3>`;
+            html += `<h3>Server: ${data.server || 'All Servers'}</h3>`;
+            
+            if (data.updates) {
+                html += `<h4>Available Updates (${data.updates.length}):</h4>`;
+                html += '<div style="max-height: 400px; overflow-y: auto; background: #f7fafc; padding: 15px; border-radius: 8px;">';
+                data.updates.forEach(u => {
+                    html += `<p style="font-family: monospace; font-size: 13px;">${u}</p>`;
+                });
+                html += '</div>';
+            } else if (data.servers) {
+                html += '<h4>Servers:</h4>';
+                for (const [server, updates] of Object.entries(data.servers)) {
+                    html += `<p><strong>${server}:</strong> ${Array.isArray(updates) ? updates.length : 0} updates</p>`;
+                }
+            }
+            
+            document.getElementById('detailsContent').innerHTML = html;
+            document.getElementById('detailsModal').style.display = 'block';
+        }
+        
+        async function downloadSnapshot(filename) {
+            window.location.href = `/api/snapshots/download/${filename}`;
+        }
+        
+        async function deleteSnapshot(filename) {
+            if (!confirm(`Delete snapshot ${filename}?`)) return;
+            
+            const response = await fetch(`/api/snapshots/delete/${filename}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                alert('Snapshot deleted');
+                loadSnapshots();
+            }
+        }
+        
+        async function compareSnapshots() {
+            const file1 = document.getElementById('compare1').value;
+            const file2 = document.getElementById('compare2').value;
+            
+            if (!file1 || !file2) {
+                alert('Select both snapshots');
+                return;
+            }
+            
+            const response = await fetch('/api/snapshots/compare', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({snapshot1: file1, snapshot2: file2})
+            });
+            const data = await response.json();
+            
+            let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">';
+            html += `<div><h3>Snapshot 1</h3><p>Timestamp: ${data.snapshot1.timestamp}</p><p>Updates: ${data.snapshot1.updates ? data.snapshot1.updates.length : 'N/A'}</p></div>`;
+            html += `<div><h3>Snapshot 2</h3><p>Timestamp: ${data.snapshot2.timestamp}</p><p>Updates: ${data.snapshot2.updates ? data.snapshot2.updates.length : 'N/A'}</p></div>`;
+            html += '</div>';
+            
+            document.getElementById('compareContent').innerHTML = html;
+        }
+        
+        async function rollbackSnapshot(filename, server) {
+            if (!confirm(`Rollback ${server} to snapshot ${filename}?\n\nNote: This will show what changed. Manual verification recommended.`)) return;
+            
+            const response = await fetch('/api/snapshots/rollback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({snapshot: filename, server: server})
+            });
+            const data = await response.json();
+            
+            alert(`${data.message}\n\n${data.note}`);
+        }
+        
+        loadSnapshots();
+    </script>
+</body>
+</html>

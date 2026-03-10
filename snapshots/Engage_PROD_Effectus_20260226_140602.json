@@ -1,0 +1,13 @@
+{
+  "timestamp": "20260226_140602",
+  "server": "Engage_PROD_Effectus",
+  "updates": [
+    "cloud-init/noble-updates 25.3-0ubuntu1~24.04.1 all [upgradable from: 25.2-0ubuntu1~24.04.1]",
+    "gcc-14-base/noble-updates 14.2.0-4ubuntu2~24.04.1 amd64 [upgradable from: 14.2.0-4ubuntu2~24.04]",
+    "libgcc-s1/noble-updates 14.2.0-4ubuntu2~24.04.1 amd64 [upgradable from: 14.2.0-4ubuntu2~24.04]",
+    "libstdc++6/noble-updates 14.2.0-4ubuntu2~24.04.1 amd64 [upgradable from: 14.2.0-4ubuntu2~24.04]",
+    "python3-software-properties/noble-updates 0.99.49.4 all [upgradable from: 0.99.49.3]",
+    "software-properties-common/noble-updates 0.99.49.4 all [upgradable from: 0.99.49.3]",
+    "systemd-hwe-hwdb/noble-updates 255.1.7 all [upgradable from: 255.1.6]"
+  ]
+}

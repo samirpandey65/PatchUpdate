@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Patch Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; }
+        .sidebar { width: 250px; background: white; height: 100vh; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px 0; }
+        .sidebar-header { padding: 0 20px 20px 20px; border-bottom: 2px solid #e2e8f0; }
+        .sidebar-header h2 { color: #667eea; font-size: 20px; margin: 0; }
+        .sidebar-menu { list-style: none; padding: 20px 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 15px 20px; color: #333; text-decoration: none; transition: all 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu a:hover { background: #f7fafc; border-left-color: #667eea; color: #667eea; }
+        .sidebar-menu a.active { background: #e3f2fd; border-left-color: #667eea; color: #667eea; font-weight: bold; }
+        .main-content { margin-left: 250px; padding: 20px; flex: 1; }
+        .page-header { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .page-header h1 { color: #667eea; font-size: 32px; margin-bottom: 10px; }
+        .action-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group select { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: 600; color: white; margin-right: 10px; }
+        .btn-primary { background: #667eea; }
+        .btn-success { background: #48bb78; }
+        .btn-danger { background: #f56565; }
+        .btn:hover { transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background: #f7fafc; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>🖥️ Patch Manager</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="/">📊 Dashboard</a></li>
+            <li><a href="/scan">🔍 Scan Servers</a></li>
+            <li><a href="/install">⚡ Install Updates</a></li>
+            <li><a href="/snapshot">📸 Snapshots</a></li>
+            <li><a href="/reports" class="active">📄 Reports</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📄 Report Management</h1>
+            <p>Generate and view patch management reports</p>
+        </div>
+        
+        <div class="action-card">
+            <h2>Generate New Report</h2>
+            <div class="form-group">
+                <label>Select Server(s):</label>
+                <select id="serverSelect" multiple style="height: 200px;">
+                    <option value="">All Servers</option>
+                </select>
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">Hold Ctrl (Windows) or Cmd (Mac) to select multiple servers</p>
+            </div>
+            <button class="btn btn-success" onclick="generateReport('pdf')">📄 Generate PDF Report</button>
+            <button class="btn btn-success" onclick="generateReport('csv')">📊 Generate CSV Report</button>
+            <div id="generateStatus" style="margin-top: 15px;"></div>
+        </div>
+        
+        <div class="action-card">
+            <h2>Existing Reports</h2>
+            <button class="btn btn-primary" onclick="loadReports()">🔄 Refresh List</button>
+            <table id="reportsTable">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Type</th>
+                        <th>Created</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportsBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        async function loadServers() {
+            const response = await fetch('/api/servers');
+            const servers = await response.json();
+            const select = document.getElementById('serverSelect');
+            select.innerHTML = '<option value="">All Servers</option>';
+            servers.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.name;
+                option.textContent = s.name;
+                select.appendChild(option);
+            });
+        }
+        
+        async function loadReports() {
+            const response = await fetch('/api/reports/list');
+            const data = await response.json();
+            const reports = data.reports || [];
+            
+            const tbody = document.getElementById('reportsBody');
+            tbody.innerHTML = '';
+            
+            if (reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">No reports found</td></tr>';
+                return;
+            }
+            
+            reports.forEach(report => {
+                const row = `<tr>
+                    <td>${report.filename}</td>
+                    <td>${report.type}</td>
+                    <td>${report.created}</td>
+                    <td>${report.size}</td>
+                    <td>
+                        ${report.type === 'PDF' ? `<button class="btn btn-primary" onclick="viewReport('${report.filename}')">👁️ View</button>` : ''}
+                        <button class="btn btn-success" onclick="downloadReport('${report.filename}')">⬇️ Download</button>
+                        <button class="btn btn-danger" onclick="deleteReport('${report.filename}')">🗑️ Delete</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        async function generateReport(format = 'pdf') {
+            const select = document.getElementById('serverSelect');
+            const selectedOptions = Array.from(select.selectedOptions).map(opt => opt.value).filter(v => v);
+            const status = document.getElementById('generateStatus');
+            
+            status.innerHTML = `<p style="color:#667eea;">Generating ${format.toUpperCase()} report...</p>`;
+            
+            try {
+                const response = await fetch('/api/report/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        servers: selectedOptions.length > 0 ? selectedOptions : null,
+                        format: format
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    status.innerHTML = `<p style="color:#f56565;">Error: ${data.error}</p>`;
+                } else {
+                    status.innerHTML = `<p style="color:#48bb78;">✓ Report generated: ${data.report}</p>`;
+                    loadReports();
+                }
+            } catch (error) {
+                status.innerHTML = `<p style="color:#f56565;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function viewReport(filename) {
+            window.open(`/api/reports/view/${filename}`, '_blank');
+        }
+        
+        function downloadReport(filename) {
+            const link = document.createElement('a');
+            link.href = `/api/reports/view/${filename}`;
+            link.download = filename;
+            link.click();
+        }
+        
+        async function deleteReport(filename) {
+            if (!confirm(`Delete report ${filename}?`)) return;
+            
+            const response = await fetch(`/api/reports/delete/${filename}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                alert('Report deleted');
+                loadReports();
+            }
+        }
+        
+        loadServers();
+        loadReports();
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+patch_management:
+  schedule: "0 2 * * 0"  # Sunday 2 AM
+  backup_before_patch: true
+
+servers:
+  file: "servers.txt"  # Tab-separated: pem_key_file<tab>ip<tab>server_name
+  pem_key_path: "D:/AWS/Keys/pem/"  # Directory where PEM keys are stored
+  default_user: "ec2-user"  # Default SSH user (ec2-user for Amazon Linux, ubuntu for Ubuntu)
+
+logging:
+  level: "INFO"
+  path: "./logs"

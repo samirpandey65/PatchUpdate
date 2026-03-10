@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Log - Patch Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; }
+        .sidebar { width: 250px; background: white; height: 100vh; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px 0; }
+        .sidebar-header { padding: 0 20px 20px 20px; border-bottom: 2px solid #e2e8f0; }
+        .sidebar-header h2 { color: #667eea; font-size: 20px; margin: 0; }
+        .sidebar-menu { list-style: none; padding: 20px 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 15px 20px; color: #333; text-decoration: none; transition: all 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu a:hover { background: #f7fafc; border-left-color: #667eea; color: #667eea; }
+        .sidebar-menu a.active { background: #e3f2fd; border-left-color: #667eea; color: #667eea; font-weight: bold; }
+        .main-content { margin-left: 250px; padding: 20px; flex: 1; }
+        .page-header { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .page-header h1 { color: #667eea; font-size: 32px; margin-bottom: 10px; }
+        .action-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: 600; color: white; margin-right: 10px; }
+        .btn-primary { background: #667eea; }
+        .btn:hover { transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        tr:hover { background: #f7fafc; }
+        .action-login { color: #48bb78; font-weight: 600; }
+        .action-logout { color: #f56565; font-weight: 600; }
+        .action-scan { color: #667eea; font-weight: 600; }
+        .action-install { color: #ed8936; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>🖥️ Patch Manager</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="/">📊 Dashboard</a></li>
+            <li><a href="/scan">🔍 Scan Servers</a></li>
+            <li><a href="/install">⚡ Install Updates</a></li>
+            <li><a href="/snapshot">📸 Snapshots</a></li>
+            <li><a href="/reports">📄 Reports</a></li>
+            <li><a href="/servers">🔧 Server Management</a></li>
+            <li><a href="/users">👥 User Management</a></li>
+            <li><a href="/activity" class="active">📋 Activity Log</a></li>
+            <li><a href="#" onclick="logout()" style="color: #f56565;">🚪 Logout</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="page-header">
+            <h1>📋 Activity Log</h1>
+            <p>Monitor user activities and system actions</p>
+        </div>
+        
+        <div class="action-card">
+            <h2>Activity Logs</h2>
+            <button class="btn btn-primary" onclick="loadLogs()">🔄 Refresh</button>
+            <table id="logsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="logsBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        async function loadLogs() {
+            const response = await fetch('/api/activity/logs?limit=100');
+            const data = await response.json();
+            
+            const tbody = document.getElementById('logsBody');
+            tbody.innerHTML = '';
+            
+            if (data.logs) {
+                data.logs.forEach(log => {
+                    const date = new Date(log.timestamp);
+                    const actionClass = `action-${log.action.toLowerCase()}`;
+                    const row = `<tr>
+                        <td>${date.toLocaleString()}</td>
+                        <td><strong>${log.username}</strong></td>
+                        <td><span class="${actionClass}">${log.action}</span></td>
+                        <td>${log.details}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+        
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            await fetch('/api/logout', {method: 'POST'});
+            window.location.href = '/login';
+        }
+        
+        loadLogs();
+    </script>
+</body>
+</html>

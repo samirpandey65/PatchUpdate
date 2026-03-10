@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Patch Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; }
+        .sidebar { width: 250px; background: white; height: 100vh; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px 0; }
+        .sidebar-header { padding: 0 20px 20px 20px; border-bottom: 2px solid #e2e8f0; }
+        .sidebar-header h2 { color: #667eea; font-size: 20px; margin: 0; }
+        .sidebar-menu { list-style: none; padding: 20px 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 15px 20px; color: #333; text-decoration: none; transition: all 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu a:hover { background: #f7fafc; border-left-color: #667eea; color: #667eea; }
+        .sidebar-menu a.active { background: #e3f2fd; border-left-color: #667eea; color: #667eea; font-weight: bold; }
+        .main-content { margin-left: 250px; padding: 20px; flex: 1; }
+        .page-header { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .page-header h1 { color: #667eea; font-size: 32px; margin-bottom: 10px; }
+        .action-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.3s; font-weight: 600; color: white; margin-right: 10px; }
+        .btn-primary { background: #667eea; }
+        .btn-success { background: #48bb78; }
+        .btn-danger { background: #f56565; }
+        .btn:hover { transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background: #f7fafc; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>🖥️ Patch Manager</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="/">📊 Dashboard</a></li>
+            <li><a href="/scan">🔍 Scan Servers</a></li>
+            <li><a href="/install">⚡ Install Updates</a></li>
+            <li><a href="/snapshot">📸 Snapshots</a></li>
+            <li><a href="/reports">📄 Reports</a></li>
+            <li><a href="/servers">🔧 Server Management</a></li>
+            <li><a href="/users" class="active">👥 User Management</a></li>
+            <li><a href="#" onclick="logout()" style="color: #f56565;">🚪 Logout</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="page-header">
+            <h1>👥 User Management</h1>
+            <p>Manage system users and permissions</p>
+        </div>
+        
+        <div class="action-card">
+            <h2>Add New User</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="newUsername" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="newPassword" placeholder="Enter password">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="newRole">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="addUser()">➕ Add User</button>
+            <div id="addStatus" style="margin-top: 15px;"></div>
+        </div>
+        
+        <div class="action-card">
+            <h2>Existing Users</h2>
+            <button class="btn btn-primary" onclick="loadUsers()">🔄 Refresh List</button>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        async function loadUsers() {
+            const response = await fetch('/api/users/list');
+            const data = await response.json();
+            
+            const tbody = document.getElementById('usersBody');
+            tbody.innerHTML = '';
+            
+            if (data.success && data.users) {
+                data.users.forEach(user => {
+                    const row = `<tr>
+                        <td>${user.username}</td>
+                        <td>${user.role}</td>
+                        <td>${user.created}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="editUser('${user.username}', '${user.role}')">✏️ Edit</button>
+                            ${user.username !== 'admin' ? `<button class="btn btn-danger" onclick="deleteUser('${user.username}')">🗑️ Delete</button>` : ''}
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+        
+        async function addUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+            const status = document.getElementById('addStatus');
+            
+            if (!username || !password) {
+                status.innerHTML = '<p style="color:#f56565;">Please fill all fields</p>';
+                return;
+            }
+            
+            const response = await fetch('/api/users/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password, role})
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                status.innerHTML = '<p style="color:#48bb78;">✓ User added successfully</p>';
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newPassword').value = '';
+                loadUsers();
+            } else {
+                status.innerHTML = `<p style="color:#f56565;">Error: ${data.error}</p>`;
+            }
+        }
+        
+        async function deleteUser(username) {
+            if (!confirm(`Delete user ${username}?`)) return;
+            
+            const response = await fetch('/api/users/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username})
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('User deleted');
+                loadUsers();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        }
+        
+        async function editUser(username, role) {
+            const newPassword = prompt(`Enter new password for ${username} (leave empty to keep current):`);
+            const newRole = prompt(`Enter new role for ${username} (admin/user):`, role);
+            
+            if (!newRole) return;
+            
+            const response = await fetch('/api/users/edit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password: newPassword || null, role: newRole})
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('User updated');
+                loadUsers();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        }
+        
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            await fetch('/api/logout', {method: 'POST'});
+            window.location.href = '/login';
+        }
+        
+        loadUsers();
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-02-17T18:32:26.260710",
+  "total_updates": 4,
+  "servers": {
+    "16_Labels_DEV_QA_Lapine": [],
+    "adm_Brief_Integration_DEV_QA_UAT_Lapine": [
+      "Security: kernel-5.10.247-246.992.amzn2.x86_64 is an installed security update",
+      "Security: kernel-5.10.235-227.919.amzn2.x86_64 is the currently running version"
+    ],
+    "adm_Brief_Integration_PREPROD_Lapine": [
+      "Security: kernel-5.10.247-246.992.amzn2.x86_64 is an installed security update",
+      "Security: kernel-5.10.225-213.878.amzn2.x86_64 is the currently running version"
+    ]
+  }
+}

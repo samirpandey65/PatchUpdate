@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260226_140800",
+  "server": "LISP_PROD_Lapine",
+  "updates": [
+    "amazon-cloudwatch-agent.x86_64   1.300064.1-1.amzn2       amzn2-core",
+    "amazon-ssm-agent.x86_64          3.3.3598.0-1.amzn2       amzn2-core",
+    "curl.x86_64                      8.3.0-1.amzn2.0.12       amzn2-core",
+    "expat.x86_64                     2.1.0-15.amzn2.0.6       amzn2-core",
+    "kernel.x86_64                    5.10.248-247.988.amzn2   amzn2extra-kernel-5.10",
+    "kernel-headers.x86_64            5.10.248-247.988.amzn2   amzn2extra-kernel-5.10",
+    "kernel-tools.x86_64              5.10.248-247.988.amzn2   amzn2extra-kernel-5.10",
+    "libcurl.x86_64                   8.3.0-1.amzn2.0.12       amzn2-core",
+    "openssh.x86_64                   7.4p1-22.amzn2.0.11      amzn2-core",
+    "openssh-clients.x86_64           7.4p1-22.amzn2.0.11      amzn2-core",
+    "openssh-server.x86_64            7.4p1-22.amzn2.0.11      amzn2-core",
+    "openssl.x86_64                   1:1.0.2k-24.amzn2.0.17   amzn2-core",
+    "openssl-devel.x86_64             1:1.0.2k-24.amzn2.0.17   amzn2-core",
+    "openssl-libs.x86_64              1:1.0.2k-24.amzn2.0.17   amzn2-core"
+  ]
+}

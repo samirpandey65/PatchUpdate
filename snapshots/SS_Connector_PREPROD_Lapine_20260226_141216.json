@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260226_141216",
+  "server": "SS_Connector_PREPROD_Lapine",
+  "updates": [
+    "cloud-init/jammy-updates 25.3-0ubuntu1~22.04.1 all [upgradable from: 25.2-0ubuntu1~22.04.1]",
+    "cpp-11/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "g++-11/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "gcc-11-base/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "gcc-11/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "git-man/jammy-updates,jammy-security 1:2.34.1-1ubuntu1.16 all [upgradable from: 1:2.34.1-1ubuntu1.15]",
+    "git/jammy-updates,jammy-security 1:2.34.1-1ubuntu1.16 amd64 [upgradable from: 1:2.34.1-1ubuntu1.15]",
+    "libasan6/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "libgcc-11-dev/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "libprotobuf-lite23/jammy-updates,jammy-security 3.12.4-1ubuntu7.22.04.6 amd64 [upgradable from: 3.12.4-1ubuntu7.22.04.4]",
+    "libstdc++-11-dev/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "libtsan0/jammy-updates 11.4.0-1ubuntu1~22.04.3 amd64 [upgradable from: 11.4.0-1ubuntu1~22.04.2]",
+    "linux-aws/jammy-updates 6.8.0-1047.50~22.04.1 amd64 [upgradable from: 6.8.0-1046.49~22.04.1]",
+    "linux-headers-aws/jammy-updates 6.8.0-1047.50~22.04.1 amd64 [upgradable from: 6.8.0-1046.49~22.04.1]",
+    "linux-image-aws/jammy-updates 6.8.0-1047.50~22.04.1 amd64 [upgradable from: 6.8.0-1046.49~22.04.1]"
+  ]
+}

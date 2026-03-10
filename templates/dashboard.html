@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Patch Management Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .sidebar-header h2 {
+            color: #667eea;
+            font-size: 20px;
+            margin: 0;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            margin: 0;
+        }
+        
+        .sidebar-menu a {
+            display: block;
+            padding: 15px 20px;
+            color: #333;
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+        
+        .sidebar-menu a:hover {
+            background: #f7fafc;
+            border-left-color: #667eea;
+            color: #667eea;
+        }
+        
+        .sidebar-menu a.active {
+            background: #e3f2fd;
+            border-left-color: #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            position: relative;
+        }
+        
+        .stat-card .download-dropdown {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .stat-card .download-dropdown .dropdown-content {
+            right: 0;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .servers-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .servers-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .server-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .category-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .category-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .server-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .server-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .server-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        
+        .server-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .server-info {
+            flex: 1;
+        }
+        
+        .server-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .server-ip {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .server-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .patch-count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge-warning {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+        
+        .patch-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            display: none;
+        }
+        
+        .patch-details.show {
+            display: block;
+        }
+        
+        .patch-details h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .patch-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .close {
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            opacity: 0.8;
+        }
+        
+        .modal-body {
+            padding: 30px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary { background: #667eea; }
+        .btn-success { background: #48bb78; }
+        .btn-warning { background: #ed8936; }
+        .btn:disabled { background: #cbd5e0; cursor: not-allowed; transform: none; }
+        
+        .patch-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 120px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-content button {
+            width: 100%;
+            padding: 10px 15px;
+            border: none;
+            background: white;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            white-space: nowrap;
+        }
+        
+        .dropdown-content button:hover {
+            background: #f7fafc;
+        }
+        
+        .patch-list-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🖥️ Patch Manager</h2>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="/" class="active">📊 Dashboard</a></li>
+            <li><a href="/scan">🔍 Scan Servers</a></li>
+            <li><a href="/install">⚡ Install Updates</a></li>
+            <li><a href="/snapshot">📸 Snapshots</a></li>
+            <li><a href="/reports">📄 Reports</a></li>
+            <li><a href="/servers">🔧 Server Management</a></li>
+            <li><a href="/users">👥 User Management</a></li>
+            <li><a href="/activity">📋 Activity Log</a></li>
+            <li><a href="#" onclick="logout()" style="color: #f56565;">🚪 Logout</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ Server Patch Management Dashboard</h1>
+            <p>Real-time monitoring of server patch status</p>
+            <div style="position: absolute; top: 30px; right: 30px; color: #667eea; font-weight: 600;">
+                👤 <span id="currentUser">Loading...</span>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card" style="cursor: pointer;" onclick="showAllServers()">
+                <h3>Total Servers</h3>
+                <div class="value" id="totalServers">-</div>
+            </div>
+            <div class="stat-card" style="cursor: pointer;" onclick="showAllPatches()">
+                <h3>Total Patches</h3>
+                <div class="value" id="totalUpdates">-</div>
+            </div>
+            <div class="stat-card" style="cursor: pointer;" onclick="showCategoryServers('uptodate')">
+                <h3>Up to Date</h3>
+                <div class="value" id="upToDate">-</div>
+            </div>
+            <div class="stat-card" style="cursor: pointer;" onclick="showCategoryServers('needsupdate')">
+                <h3>Needs Updates</h3>
+                <div class="value" id="needsAttention">-</div>
+            </div>
+        </div>
+        
+        <div class="servers-section">
+            <h2>Server Status</h2>
+            <button class="btn" onclick="refreshDashboard()" style="margin-bottom: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">🔄 Refresh Status</button>
+            <div id="loadingIndicator" style="text-align: center; padding: 20px; color: #667eea; font-size: 16px; display: none;">
+                <div class="spinner"></div>
+                <p>Scanning servers... This may take a moment.</p>
+            </div>
+            
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;" onclick="showCategoryServers('uptodate')">
+                    <h3>✓ Up to Date Servers</h3>
+                    <div class="value" id="upToDateCount">0</div>
+                </div>
+                <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;" onclick="showCategoryServers('needsupdate')">
+                    <h3>⚠ Servers Needing Updates</h3>
+                    <div class="value" id="needsUpdateCount">0</div>
+                </div>
+                <div class="stat-card" style="cursor: pointer; transition: transform 0.3s;" onclick="showCategoryServers('needsrestart')">
+                    <h3>🔄 Servers Needing Restart</h3>
+                    <div class="value" id="needsRestartCount">0</div>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div id="amazonServers"></div>
+                <div id="ubuntuServers"></div>
+            </div>
+            
+            <div id="serversList" style="display:none;">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading servers...
+                </div>
+            </div>
+            <div class="last-updated" id="lastUpdated"></div>
+        </div>
+    </div>
+    </div>
+    
+    <!-- Server Details Modal -->
+    <div id="serverModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalServerName">Server Details</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">IP Address</div>
+                        <div class="info-value" id="modalIP">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">OS Type</div>
+                        <div class="info-value" id="modalOS">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Updates</div>
+                        <div class="info-value" id="modalUpdates">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Reboot Required</div>
+                        <div class="info-value" id="modalReboot">-</div>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="closeModal(); document.getElementById('categoryModal').style.display = 'block';">← Back</button>
+                    <button class="btn btn-primary" id="rescanBtn" onclick="rescanServer()">🔄 Rescan</button>
+                    <button class="btn btn-success" id="modalInstallBtn" onclick="installServer()" disabled>⚡ Install Updates</button>
+                    <button class="btn btn-primary" onclick="reportServer()">📄 Report</button>
+                </div>
+                
+                <div id="rescanProgress" style="display: none; text-align: center; padding: 20px; background: #f7fafc; border-radius: 8px; margin-top: 15px;">
+                    <div class="spinner"></div>
+                    <p style="color: #667eea; font-weight: 600; margin-top: 10px;">Rescanning server... Please wait.</p>
+                </div>
+                
+                <div id="installProgress" style="display: none; text-align: center; padding: 20px; background: #f7fafc; border-radius: 8px; margin-top: 15px;">
+                    <div class="spinner"></div>
+                    <p style="color: #667eea; font-weight: 600; margin-top: 10px;">Installing updates... Please wait.</p>
+                </div>
+                
+                <div id="modalPatchList" style="display:none;">
+                    <h3 style="margin-bottom: 10px;">Available Patches (<span id="modalPatchCount">0</span>)</h3>
+                    <div class="patch-list" id="patchListContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category List Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Server List</h2>
+                <span class="close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="categoryListContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        let servers = [];
+        
+        async function loadServers() {
+            try {
+                const response = await fetch('/api/servers');
+                servers = await response.json();
+                displayServers();
+            } catch (error) {
+                console.error('Failed to load servers:', error);
+            }
+        }
+        
+        async function loadStatus() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/status');
+                
+                if (!response.ok) {
+                    console.error('Status fetch failed:', response.status);
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Status data:', data);
+                
+                if (data.servers && Array.isArray(data.servers)) {
+                    updateStats(data);
+                    updateServerCards(data.servers);
+                    updateLastUpdated();
+                } else {
+                    console.error('Invalid data format:', data);
+                }
+            } catch (error) {
+                console.error('Failed to load status:', error);
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        }
+        
+        function displayServers() {
+            // Not used anymore - servers displayed in categories
+        }
+        
+        function toggleDetails(serverName) {
+            const details = document.getElementById(`details-${serverName}`);
+            details.classList.toggle('show');
+        }
+        
+        async function scanAllServers() {
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({})
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Scan request failed');
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (data.servers && Array.isArray(data.servers)) {
+                    updateStats(data);
+                    updateServerCards(data.servers);
+                    updateLastUpdated();
+                }
+            } catch (error) {
+                console.error('Scan error:', error);
+            }
+        }
+        
+        function updateStats(data) {
+            if (!data.servers || !Array.isArray(data.servers)) {
+                return;
+            }
+            
+            document.getElementById('totalServers').textContent = data.servers.length;
+            document.getElementById('totalUpdates').textContent = data.total_updates || 0;
+            
+            const upToDate = data.servers.filter(s => s.count === 0).length;
+            const needsAttention = data.servers.filter(s => s.count > 0).length;
+            
+            document.getElementById('upToDate').textContent = upToDate;
+            document.getElementById('needsAttention').textContent = needsAttention;
+        }
+        
+        function updateServerCards(serverData) {
+            const amazonDiv = document.getElementById('amazonServers');
+            const ubuntuDiv = document.getElementById('ubuntuServers');
+            
+            let upToDateCount = 0;
+            let needsUpdateCount = 0;
+            let needsRestartCount = 0;
+            
+            const amazonServers = [];
+            const ubuntuServers = [];
+            
+            // Group by OS
+            const osGroups = {};
+            
+            serverData.forEach(server => {
+                const osType = server.os_type || 'Unknown';
+                if (!osGroups[osType]) {
+                    osGroups[osType] = [];
+                }
+                osGroups[osType].push(server);
+                
+                if (server.count === 0) upToDateCount++;
+                if (server.count > 0) needsUpdateCount++;
+                if (server.needs_reboot) needsRestartCount++;
+            });
+            
+            // Update counts
+            document.getElementById('upToDateCount').textContent = upToDateCount;
+            document.getElementById('needsUpdateCount').textContent = needsUpdateCount;
+            document.getElementById('needsRestartCount').textContent = needsRestartCount;
+            
+            // Build OS cards
+            for (const [osType, servers] of Object.entries(osGroups)) {
+                const isAmazon = osType.includes('Amazon');
+                const targetDiv = isAmazon ? amazonServers : ubuntuServers;
+                
+                // Get unique patches for this OS
+                const allPatches = new Set();
+                servers.forEach(s => {
+                    if (s.updates) {
+                        s.updates.forEach(u => allPatches.add(u));
+                    }
+                });
+                
+                const escapedOsType = osType.replace(/'/g, "\\'");
+                const card = `
+                    <div class="stat-card" style="cursor: pointer;" onclick="showOSDetails('${escapedOsType}', ${servers.length}, ${allPatches.size})">
+                        <h3>${osType}</h3>
+                        <div class="value">${allPatches.size}</div>
+                    </div>
+                `;
+                targetDiv.push(card);
+            }
+            
+            amazonDiv.innerHTML = amazonServers.length > 0 ? amazonServers.join('') : '<div class="stat-card"><h3>🐧 Amazon Linux Servers</h3><div class="value">0</div><p style="color: #666; font-size: 14px; margin-top: 10px;">No servers</p></div>';
+            ubuntuDiv.innerHTML = ubuntuServers.length > 0 ? ubuntuServers.join('') : '<div class="stat-card"><h3>🐧 Ubuntu Servers</h3><div class="value">0</div><p style="color: #666; font-size: 14px; margin-top: 10px;">No servers</p></div>';
+        }
+        
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = 
+                `Last updated: ${now.toLocaleString()}`;
+        }
+        
+        // Load servers and status on page load
+        loadServers();
+        loadStatus();  // This now loads from cache instantly
+        
+        // Load current user
+        fetch('/api/current-user').then(r => r.json()).then(data => {
+            document.getElementById('currentUser').textContent = `${data.username} (${data.role})`;
+        });
+        
+        // Refresh button
+        function refreshDashboard() {
+            loadStatus();
+        }
+        
+        function showAllServers() {
+            if (allServersData.length === 0) {
+                alert('No servers available');
+                return;
+            }
+            
+            let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">`;
+            html += `<h3>All Servers</h3>`;
+            html += `<div class="dropdown">`;
+            html += `<button class="btn btn-success" style="padding: 8px 15px;">📥 Download</button>`;
+            html += `<div class="dropdown-content">`;
+            html += `<button onclick="downloadAllServersCSV()">CSV Format</button>`;
+            html += `<button onclick="downloadAllServersPDF()">PDF Format</button>`;
+            html += `</div></div></div>`;
+            html += '<div style="max-height: 400px; overflow-y: auto;">';
+            allServersData.forEach(s => {
+                html += `<div style="padding: 10px; margin: 5px 0; background: #f7fafc; border-left: 4px solid #667eea; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div style="cursor: pointer; flex: 1;" onclick="closeCategoryModal(); showServerDetails('${s.name}')"><strong>${s.name}</strong> - ${s.count} updates</div>`;
+                html += `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="event.stopPropagation(); downloadServerDetails('${s.name}')">📥 Download</button>`;
+                html += '</div>';
+            });
+            html += '</div>';
+            html += `<button class="btn btn-primary" style="margin-top: 15px;" onclick="navigateBack()">← Back</button>`;
+            
+            document.getElementById('categoryListContent').innerHTML = html;
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+        
+        function showAllPatches() {
+            const serversWithPatches = allServersData.filter(s => s.count > 0);
+            
+            if (serversWithPatches.length === 0) {
+                alert('No patches available');
+                return;
+            }
+            
+            const allPatches = new Set();
+            serversWithPatches.forEach(s => {
+                if (s.updates) {
+                    s.updates.forEach(u => allPatches.add(u));
+                }
+            });
+            
+            let html = '<h3>All Available Patches</h3>';
+            html += `<p><strong>${allPatches.size}</strong> unique patches across <strong>${serversWithPatches.length}</strong> servers</p>`;
+            html += '<h4>Patches (click to see affected servers):</h4>';
+            html += '<div class="patch-list">';
+            Array.from(allPatches).forEach(patch => {
+                const escapedPatch = patch.replace(/'/g, "\\'");
+                html += `<div class="patch-list-item" style="cursor: pointer;" onclick="showServersForPatchGlobal('${escapedPatch}')">${patch}</div>`;
+            });
+            html += '</div>';
+            html += `<button class="btn btn-primary" style="margin-top: 15px;" onclick="navigateBack()">← Back</button>`;
+            
+            document.getElementById('categoryListContent').innerHTML = html;
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+        
+        function showServersForPatchGlobal(patchName) {
+            const filtered = allServersData.filter(s => {
+                if (!s.updates) return false;
+                return s.updates.some(u => u === patchName);
+            });
+            
+            let html = `<h3>Servers with patch:</h3>`;
+            html += `<p style="font-family: monospace; background: #f7fafc; padding: 10px; border-radius: 5px; margin: 10px 0;">${patchName}</p>`;
+            html += '<h4>Affected Servers:</h4>';
+            html += '<div style="max-height: 300px; overflow-y: auto;">';
+            filtered.forEach(s => {
+                html += `<div style="padding: 8px; margin: 5px 0; background: #f7fafc; border-left: 4px solid #667eea; border-radius: 5px; cursor: pointer;" onclick="closeCategoryModal(); showServerDetails('${s.name}')">`;
+                html += `<strong>${s.name}</strong> - ${s.ip || 'N/A'}`;
+                html += '</div>';
+            });
+            html += '</div>';
+            html += `<button class="btn btn-primary" style="margin-top: 15px;" onclick="showAllPatches()">← Back to Patches</button>`;
+            
+            document.getElementById('categoryListContent').innerHTML = html;
+        }
+        
+        function showCategoryServers(category, addToHistory = true) {
+            if (addToHistory) {
+                navigationHistory = [];
+            }
+            const filtered = allServersData.filter(s => {
+                if (category === 'uptodate') return s.count === 0;
+                if (category === 'needsupdate') return s.count > 0;
+                if (category === 'needsrestart') return s.needs_reboot === true;
+                return false;
+            });
+            
+            if (filtered.length === 0) {
+                alert('No servers in this category');
+                return;
+            }
+            
+            const categoryTitle = category === 'uptodate' ? 'Up to Date Servers' : category === 'needsupdate' ? 'Servers Needing Updates' : 'Servers Needing Restart';
+            let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">`;
+            html += `<h3>${categoryTitle}</h3>`;
+            html += `<div class="dropdown">`;
+            html += `<button class="btn btn-success" style="padding: 8px 15px;">📥 Download</button>`;
+            html += `<div class="dropdown-content">`;
+            html += `<button onclick="downloadCategoryCSV('${category}', '${categoryTitle}')">CSV Format</button>`;
+            html += `<button onclick="downloadCategoryPDF('${category}', '${categoryTitle}')">PDF Format</button>`;
+            html += `</div></div></div>`;
+            html += '<div style="max-height: 400px; overflow-y: auto;">';
+            filtered.forEach(s => {
+                html += `<div style="padding: 10px; margin: 5px 0; background: #f7fafc; border-left: 4px solid #667eea; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div style="cursor: pointer; flex: 1;" onclick="closeCategoryModal(); showServerDetails('${s.name}')"><strong>${s.name}</strong> - ${s.count} updates</div>`;
+                html += `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="event.stopPropagation(); downloadServerDetails('${s.name}')">📥 Download</button>`;
+                html += '</div>';
+            });
+            html += '</div>';
+            html += `<button class="btn btn-primary" style="margin-top: 15px;" onclick="navigateBack()">← Back</button>`;
+            
+            document.getElementById('categoryListContent').innerHTML = html;
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+        
+        function showOSDetails(osType, serverCount, patchCount, addToHistory = true) {
+            if (addToHistory) {
+                navigationHistory = [];
+            }
+            const filtered = allServersData.filter(s => (s.os_type || 'Unknown') === osType);
+            
+            const allPatches = new Set();
+            filtered.forEach(s => {
+                if (s.updates) {
+                    s.updates.forEach(u => allPatches.add(u));
+                }
+            });
+            
+            const escapedOsType = osType.replace(/'/g, "\\'");
+            let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">`;
+            html += `<h3>${osType}</h3>`;
+            html += `<div class="dropdown">`;
+            html += `<button class="btn btn-success" style="padding: 8px 15px;">📥 Download</button>`;
+            html += `<div class="dropdown-content">`;
+            html += `<button onclick="downloadOSServersCSV('${escapedOsType}')">CSV Format</button>`;
+            html += `<button onclick="downloadOSServersPDF('${escapedOsType}')">PDF Format</button>`;
+            html += `</div></div></div>`;
+            html += `<p><strong>${serverCount}</strong> server(s) with <strong>${allPatches.size}</strong> unique ${allPatches.size === 1 ? 'patch' : 'patches'}</p>`;
+            
+            if (allPatches.size > 0) {
+                html += '<h4>Unique Patches (click to see affected servers):</h4>';
+                html += '<div class="patch-list">';
+                Array.from(allPatches).forEach(patch => {
+                    const escapedPatch = patch.replace(/'/g, "\\'");
+                    html += `<div class="patch-list-item" style="cursor: pointer;" onclick="showServersForPatch('${escapedOsType}', '${escapedPatch}')">${patch}</div>`;
+                });
+                html += '</div>';
+            }
+            
+            html += `<button class="btn btn-primary" style="margin-top: 15px;" onclick="navigateBack()">← Back</button>`;
+            
+            document.getElementById('categoryListContent').innerHTML = html;
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+        
+        function showServersForPatch(osType, patchName, addToHistory = true) {
+            if (addToHistory) {
+                const filtered = allServersData.filter(s => (s.os_type || 'Unknown') === osType);
+                const allPatches = new Set();
+                filtered.forEach(s => {
+                    if (s.updates) {
+                        s.updates.forEach(u => allPatches.add(u));
+                    }
+                });
+                navigationHistory.push({type: 'os', osType: osType, serverCount: filtered.length, patchCount: allPatches.size});
+            }
+            const filtered = allServersData.filter(s => {
+                if ((s.os_type || 'Unknown') !== osType) return false;
+                if (!s.updates) return false;
+                return s.updates.some(u => u === patchName);
+            });
+            
+            let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">`;
+            html += `<h3>Servers with patch:</h3>`;
+            html += `<div class="dropdown">`;
+            html += `<button class="btn btn-success" style="padding: 8px 15px;">📥 Download</button>`;
+            html += `<div class="dropdown-content">`;
+            html += `<button onclick="downloadPatchServersCSV('${osType}', '${patchName.replace(/'/g, "\\'")}')" style="white-space: nowrap;">CSV Format</button>`;
+            html += `<button onclick="downloadPatchServersPDF('${osType}', '${patchName.replace(/'/g, "\\'")}')" style="white-space: nowrap;">PDF Format</button>`;
+            html += `</div></div></div>`;
+            html += `<p style="font-family: monospace; background: #f7fafc; padding: 10px; border-radius: 5px; margin: 10px 0;">${patchName}</p>`;
+            html += '<h4>Affected Servers:</h4>';
+            html += '<div style="max-height: 300px; overflow-y: auto;">';
+            filtered.forEach(s => {
+                html += `<div style="padding: 8px; margin: 5px 0; background: #f7fafc; border-left: 4px solid #667eea; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div style="cursor: pointer; flex: 1;" onclick="closeCategoryModal(); showServerDetails('${s.name}')"><strong>${s.name}</strong> - ${s.ip || 'N/A'}</div>`;
+                html += `<button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="event.stopPropagation(); downloadServerDetails('${s.name}')">📥 Download</button>`;
+                html += '</div>';
+            });
+            html += '</div>';
+            html += `<button class="btn btn-primary" style="margin-top: 15px;" onclick="navigateBack()">← Back</button>`;
+            
+            document.getElementById('categoryListContent').innerHTML = html;
+        }
+        
+        function closeCategoryModal() {
+            navigationHistory = [];
+            document.getElementById('categoryModal').style.display = 'none';
+        }
+        
+        let currentServer = null;
+        let allServersData = [];
+        let navigationHistory = [];
+        
+        function navigateBack() {
+            if (navigationHistory.length > 0) {
+                const previous = navigationHistory.pop();
+                if (previous.type === 'category') {
+                    showCategoryServers(previous.category, false);
+                } else if (previous.type === 'os') {
+                    showOSDetails(previous.osType, previous.serverCount, previous.patchCount, false);
+                } else if (previous.type === 'patch') {
+                    showServersForPatch(previous.osType, previous.patchName, false);
+                }
+            } else {
+                closeCategoryModal();
+                closeModal();
+            }
+        }
+        
+        async function loadStatus() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/status');
+                
+                if (!response.ok) {
+                    console.error('Status fetch failed:', response.status);
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.servers && Array.isArray(data.servers)) {
+                    allServersData = data.servers;
+                    updateStats(data);
+                    updateServerCards(data.servers);
+                    updateLastUpdated();
+                }
+            } catch (error) {
+                console.error('Failed to load status:', error);
+            } finally {
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
+        }
+        
+        async function showServerDetails(serverName) {
+            currentServer = serverName;
+            
+            try {
+                const response = await fetch(`/api/server/${serverName}/details`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                document.getElementById('modalServerName').textContent = data.name;
+                document.getElementById('modalIP').textContent = data.ip || 'N/A';
+                document.getElementById('modalOS').textContent = data.os_type || 'Unknown';
+                document.getElementById('modalUpdates').textContent = data.count || 0;
+                document.getElementById('modalReboot').textContent = data.needs_reboot ? 'Yes' : 'No';
+                
+                const installBtn = document.getElementById('modalInstallBtn');
+                if (data.count > 0) {
+                    installBtn.disabled = false;
+                } else {
+                    installBtn.disabled = true;
+                }
+                
+                if (data.updates && data.updates.length > 0) {
+                    document.getElementById('modalPatchList').style.display = 'block';
+                    document.getElementById('modalPatchCount').textContent = data.updates.length;
+                    const patchList = document.getElementById('patchListContent');
+                    patchList.innerHTML = '';
+                    data.updates.forEach(patch => {
+                        const div = document.createElement('div');
+                        div.className = 'patch-list-item';
+                        div.textContent = patch;
+                        patchList.appendChild(div);
+                    });
+                } else {
+                    document.getElementById('modalPatchList').style.display = 'none';
+                }
+                
+                document.getElementById('serverModal').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function closeModal() {
+            navigationHistory = [];
+            document.getElementById('serverModal').style.display = 'none';
+        }
+        
+        async function rescanServer() {
+            if (!confirm(`Rescan ${currentServer}?`)) return;
+            
+            const rescanBtn = document.getElementById('rescanBtn');
+            const progress = document.getElementById('rescanProgress');
+            
+            rescanBtn.disabled = true;
+            progress.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({server: currentServer})
+                });
+                
+                alert('Scan complete!');
+                loadStatus();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                rescanBtn.disabled = false;
+                progress.style.display = 'none';
+            }
+        }
+        
+        async function installServer() {
+            if (!confirm(`Install updates on ${currentServer}?`)) return;
+            
+            const installBtn = document.getElementById('modalInstallBtn');
+            const progress = document.getElementById('installProgress');
+            
+            installBtn.disabled = true;
+            progress.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/install', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({server: currentServer})
+                });
+                const data = await response.json();
+                
+                alert(`Installation ${data.status}`);
+                loadStatus();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                installBtn.disabled = false;
+                progress.style.display = 'none';
+            }
+        }
+        
+        async function snapshotServer() {
+            const snapshotBtn = document.getElementById('snapshotBtn');
+            const progress = document.getElementById('snapshotProgress');
+            
+            snapshotBtn.disabled = true;
+            progress.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/snapshot', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({server: currentServer})
+                });
+                const data = await response.json();
+                
+                alert('Snapshot created: ' + data.snapshot);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                snapshotBtn.disabled = false;
+                progress.style.display = 'none';
+            }
+        }
+        
+        async function reportServer() {
+            try {
+                const response = await fetch('/api/report/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({servers: [currentServer]})
+                });
+                const data = await response.json();
+                
+                if (data.report) {
+                    window.open(`/api/reports/view/${data.report}`, '_blank');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            try {
+                await fetch('/api/logout', {method: 'POST'});
+                window.location.href = '/login';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function downloadServerDetails(serverName) {
+            const server = allServersData.find(s => s.name === serverName);
+            if (!server) return;
+            
+            let content = `Server: ${server.name}\n`;
+            content += `IP Address: ${server.ip || 'N/A'}\n`;
+            content += `OS Type: ${server.os_type || 'Unknown'}\n`;
+            content += `Total Updates: ${server.count || 0}\n`;
+            content += `Reboot Required: ${server.needs_reboot ? 'Yes' : 'No'}\n`;
+            content += `\n--- Available Patches ---\n`;
+            if (server.updates && server.updates.length > 0) {
+                server.updates.forEach(patch => {
+                    content += `${patch}\n`;
+                });
+            } else {
+                content += 'No patches available\n';
+            }
+            
+            const blob = new Blob([content], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${serverName}_patches.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadCategoryCSV(category, categoryTitle) {
+            const filtered = allServersData.filter(s => {
+                if (category === 'uptodate') return s.count === 0;
+                if (category === 'needsupdate') return s.count > 0;
+                if (category === 'needsrestart') return s.needs_reboot === true;
+                return false;
+            });
+            
+            let csv = 'Server,IP,OS,Updates,Reboot,Patch Count\n';
+            filtered.forEach(s => {
+                csv += `"${s.name}","${s.ip || 'N/A'}","${s.os_type || 'Unknown'}",${s.count || 0},${s.needs_reboot ? 'Yes' : 'No'},${s.count || 0}\n`;
+            });
+            
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${category}_servers.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadCategoryPDF(category, categoryTitle) {
+            const filtered = allServersData.filter(s => {
+                if (category === 'uptodate') return s.count === 0;
+                if (category === 'needsupdate') return s.count > 0;
+                if (category === 'needsrestart') return s.needs_reboot === true;
+                return false;
+            });
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text(categoryTitle, 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Total Servers: ${filtered.length}`, 14, 22);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+            
+            const tableData = filtered.map(s => [
+                s.name,
+                s.ip || 'N/A',
+                s.os_type || 'Unknown',
+                s.count || 0,
+                s.needs_reboot ? 'Yes' : 'No',
+                s.count || 0
+            ]);
+            
+            doc.autoTable({
+                head: [['Server', 'IP', 'OS', 'Updates', 'Reboot', 'Patch Count']],
+                body: tableData,
+                startY: 35,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [102, 126, 234] }
+            });
+            
+            doc.save(`${category}_servers.pdf`);
+        }
+        
+        function downloadAllServersCSV() {
+            let csv = 'Server,IP,OS,Updates,Reboot,Patch Count\n';
+            allServersData.forEach(s => {
+                csv += `"${s.name}","${s.ip || 'N/A'}","${s.os_type || 'Unknown'}",${s.count || 0},${s.needs_reboot ? 'Yes' : 'No'},${s.count || 0}\n`;
+            });
+            
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'all_servers.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadAllServersPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text('All Servers', 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Total Servers: ${allServersData.length}`, 14, 22);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+            
+            const tableData = allServersData.map(s => [
+                s.name,
+                s.ip || 'N/A',
+                s.os_type || 'Unknown',
+                s.count || 0,
+                s.needs_reboot ? 'Yes' : 'No',
+                s.count || 0
+            ]);
+            
+            doc.autoTable({
+                head: [['Server', 'IP', 'OS', 'Updates', 'Reboot', 'Patch Count']],
+                body: tableData,
+                startY: 35,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [102, 126, 234] }
+            });
+            
+            doc.save('all_servers.pdf');
+        }
+        
+        function downloadPatchServersCSV(osType, patchName) {
+            const filtered = allServersData.filter(s => {
+                if ((s.os_type || 'Unknown') !== osType) return false;
+                if (!s.updates) return false;
+                return s.updates.some(u => u === patchName);
+            });
+            
+            let csv = 'Server,IP,OS,Updates\n';
+            filtered.forEach(s => {
+                csv += `"${s.name}","${s.ip || 'N/A'}","${s.os_type || 'Unknown'}",${s.count || 0}\n`;
+            });
+            
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'patch_affected_servers.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadPatchServersPDF(osType, patchName) {
+            const filtered = allServersData.filter(s => {
+                if ((s.os_type || 'Unknown') !== osType) return false;
+                if (!s.updates) return false;
+                return s.updates.some(u => u === patchName);
+            });
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text('Servers with Patch', 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Patch: ${patchName}`, 14, 22);
+            doc.text(`OS Type: ${osType}`, 14, 28);
+            doc.text(`Total Servers: ${filtered.length}`, 14, 34);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 40);
+            
+            const tableData = filtered.map(s => [
+                s.name,
+                s.ip || 'N/A',
+                s.os_type || 'Unknown',
+                s.count || 0
+            ]);
+            
+            doc.autoTable({
+                head: [['Server', 'IP', 'OS', 'Updates']],
+                body: tableData,
+                startY: 45,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [102, 126, 234] }
+            });
+            
+            doc.save('patch_affected_servers.pdf');
+        }
+        
+        function downloadOSServersCSV(osType) {
+            const filtered = allServersData.filter(s => (s.os_type || 'Unknown') === osType);
+            
+            const allPatches = new Set();
+            filtered.forEach(s => {
+                if (s.updates) {
+                    s.updates.forEach(u => allPatches.add(u));
+                }
+            });
+            
+            let csv = `OS Type: ${osType}\n`;
+            csv += `Total Servers: ${filtered.length}\n`;
+            csv += `Unique Patches: ${allPatches.size}\n\n`;
+            csv += 'Patch Name\n';
+            Array.from(allPatches).forEach(patch => {
+                csv += `"${patch}"\n`;
+            });
+            
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${osType.replace(/\s+/g, '_')}_patches.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function downloadOSServersPDF(osType) {
+            const filtered = allServersData.filter(s => (s.os_type || 'Unknown') === osType);
+            
+            const allPatches = new Set();
+            filtered.forEach(s => {
+                if (s.updates) {
+                    s.updates.forEach(u => allPatches.add(u));
+                }
+            });
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(16);
+            doc.text(`${osType}`, 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Total Servers: ${filtered.length}`, 14, 22);
+            doc.text(`Unique Patches: ${allPatches.size}`, 14, 28);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 34);
+            
+            const tableData = Array.from(allPatches).map(patch => [patch]);
+            
+            doc.autoTable({
+                head: [['Patch Name']],
+                body: tableData,
+                startY: 40,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [102, 126, 234] }
+            });
+            
+            doc.save(`${osType.replace(/\s+/g, '_')}_patches.pdf`);
+        }
+    </script>
+</body>
+</html>

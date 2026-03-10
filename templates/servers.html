@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Management - Patch Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; }
+        .sidebar { width: 250px; background: white; height: 100vh; position: fixed; left: 0; top: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px 0; }
+        .sidebar-header { padding: 0 20px 20px 20px; border-bottom: 2px solid #e2e8f0; }
+        .sidebar-header h2 { color: #667eea; font-size: 20px; margin: 0; }
+        .sidebar-menu { list-style: none; padding: 20px 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 15px 20px; color: #333; text-decoration: none; transition: all 0.3s; border-left: 4px solid transparent; }
+        .sidebar-menu a:hover { background: #f7fafc; border-left-color: #667eea; color: #667eea; }
+        .sidebar-menu a.active { background: #e3f2fd; border-left-color: #667eea; color: #667eea; font-weight: bold; }
+        .main-content { margin-left: 250px; padding: 20px; flex: 1; }
+        .page-header { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; }
+        .page-header h1 { color: #667eea; font-size: 32px; margin-bottom: 10px; }
+        .action-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s; font-weight: 600; color: white; margin-right: 10px; margin-bottom: 10px; }
+        .btn-primary { background: #667eea; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #48bb78; }
+        .btn-success:hover { background: #38a169; }
+        .btn-info { background: #4299e1; }
+        .btn-info:hover { background: #3182ce; }
+        .result { margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; border-left: 4px solid #667eea; }
+        .server-list { margin-top: 20px; }
+        .server-item { background: #f7fafc; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #667eea; display: flex; justify-content: space-between; align-items: center; }
+        .btn-delete { padding: 8px 16px; background: #f56565; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .btn-delete:hover { background: #e53e3e; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>🖥️ Patch Manager</h2></div>
+        <ul class="sidebar-menu">
+            <li><a href="/">📊 Dashboard</a></li>
+            <li><a href="/scan">🔍 Scan Servers</a></li>
+            <li><a href="/install">⚡ Install Updates</a></li>
+            <li><a href="/snapshot">📸 Snapshots</a></li>
+            <li><a href="/reports">📄 Reports</a></li>
+            <li><a href="/servers" class="active">🔧 Server Management</a></li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div class="page-header">
+            <h1>🔧 Server Management</h1>
+            <p>Add, import, or export server configurations</p>
+        </div>
+        
+        <div class="action-card">
+            <h2>Add New Server</h2>
+            <form id="addServerForm">
+                <div class="form-group">
+                    <label>PEM Key File Name:</label>
+                    <input type="text" id="pemKey" placeholder="server.pem" required>
+                </div>
+                <div class="form-group">
+                    <label>IP Address:</label>
+                    <input type="text" id="ipAddress" placeholder="192.168.1.10" required>
+                </div>
+                <div class="form-group">
+                    <label>Server Name:</label>
+                    <input type="text" id="serverName" placeholder="My Server" required>
+                </div>
+                <div class="form-group">
+                    <label>Username (Optional):</label>
+                    <input type="text" id="username" placeholder="ubuntu or ec2-user">
+                </div>
+                <button type="submit" class="btn btn-success">Add Server</button>
+            </form>
+            <div id="addResult"></div>
+        </div>
+        
+        <div class="action-card">
+            <h2>Import Servers</h2>
+            <p style="margin: 15px 0; color: #666;">Upload a tab-separated text file with server details</p>
+            <p style="margin: 15px 0; color: #666; font-size: 14px;">Format: pem_key_file &lt;tab&gt; ip_address &lt;tab&gt; server_name &lt;tab&gt; username(optional)</p>
+            <input type="file" id="importFile" accept=".txt" style="margin-bottom: 15px;">
+            <button class="btn btn-primary" onclick="importServers()">Import Servers</button>
+            <div id="importResult"></div>
+        </div>
+        
+        <div class="action-card">
+            <h2>Export Servers</h2>
+            <p style="margin: 15px 0; color: #666;">Download current server list as text file</p>
+            <button class="btn btn-info" onclick="exportServers()">Export Servers</button>
+        </div>
+        
+        <div class="action-card">
+            <h2>Current Servers</h2>
+            <div id="serverList" class="server-list"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('addServerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                pem_key: document.getElementById('pemKey').value,
+                ip: document.getElementById('ipAddress').value,
+                name: document.getElementById('serverName').value,
+                user: document.getElementById('username').value || ''
+            };
+            
+            try {
+                const response = await fetch('/api/servers/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                
+                document.getElementById('addResult').innerHTML = 
+                    `<div class="result"><p style="color: #48bb78;">✓ Server added successfully!</p></div>`;
+                document.getElementById('addServerForm').reset();
+                loadServers();
+            } catch (error) {
+                document.getElementById('addResult').innerHTML = 
+                    `<div class="result" style="border-left-color:#f56565;"><p style="color:#f56565;">Error: ${error.message}</p></div>`;
+            }
+        });
+        
+        async function importServers() {
+            const fileInput = document.getElementById('importFile');
+            if (!fileInput.files[0]) {
+                alert('Please select a file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/api/servers/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                document.getElementById('importResult').innerHTML = 
+                    `<div class="result"><p style="color: #48bb78;">✓ Imported ${result.count} servers successfully!</p></div>`;
+                loadServers();
+            } catch (error) {
+                document.getElementById('importResult').innerHTML = 
+                    `<div class="result" style="border-left-color:#f56565;"><p style="color:#f56565;">Error: ${error.message}</p></div>`;
+            }
+        }
+        
+        function exportServers() {
+            window.location.href = '/api/servers/export';
+        }
+        
+        async function loadServers() {
+            try {
+                const response = await fetch('/api/servers');
+                const servers = await response.json();
+                
+                const listDiv = document.getElementById('serverList');
+                if (servers.length === 0) {
+                    listDiv.innerHTML = '<p>No servers configured</p>';
+                    return;
+                }
+                
+                listDiv.innerHTML = servers.map(s => `
+                    <div class="server-item">
+                        <strong>${s.name}</strong><br>
+                        IP: ${s.ip}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load servers:', error);
+            }
+        }
+        
+        loadServers();
+        
+        async function deleteServer(name) {
+            if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+            
+            try {
+                const response = await fetch('/api/servers/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: name})
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    loadServers();
+                }
+            } catch (error) {
+                alert('Error deleting server: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
