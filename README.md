@@ -71,7 +71,7 @@ python scheduler.py
 python web_app.py
 
 # Access dashboard in browser
-http://localhost:5000
+http://localhost:5001
 ```
 
 ## Features
