@@ -21,9 +21,9 @@ pem_key_file<tab>ip_address<tab>server_name<tab>username(optional)
 
 Example:
 ```
-16_Labels_DEV_QA_Lapine.pem	44.228.98.184	16_Labels_DEV_QA_Lapine	ubuntu
-16_Labels_PROD_Lapine.pem	54.185.121.92	16_Labels_PROD_Lapine	ec2-user
-adm_Brief_Integration.pem	44.239.229.13	adm_Brief_Integration
+server_name.pem	8.8.8.8	Server_Name	ubuntu
+server_name.pem	8.8.8.8	Server_Name	ec2-user
+server_name.pem	8.8.8.8	Server_Name
 ```
 
 Note: Username is optional. If not provided, system will auto-detect (tries ec2-user, ubuntu).
