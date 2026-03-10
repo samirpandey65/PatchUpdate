@@ -1,7 +1,0 @@
-{
-  "timestamp": "20260226_135609",
-  "server": "Customer_Vendor_Portal_DEV_QA_UAT_Lapine_Old",
-  "updates": [
-    "MariaDB-server.x86_64                10.6.19-1.el7.centos                mariadb"
-  ]
-}

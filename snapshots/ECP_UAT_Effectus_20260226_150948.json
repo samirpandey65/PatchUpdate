@@ -1,8 +1,0 @@
-{
-  "timestamp": "20260226_150948",
-  "server": "ECP_UAT_Effectus",
-  "updates": [
-    "libgl1-amber-dri/noble-updates 21.3.9-0ubuntu3~24.04.1 amd64 [upgradable from: 21.3.9-0ubuntu2]",
-    "php8.3/noble-updates,noble-security 8.3.6-0ubuntu0.24.04.6 all [upgradable from: 8.3.6-0ubuntu0.24.04.5]"
-  ]
-}

@@ -1,7 +1,0 @@
-{
-  "timestamp": "20260224_171335",
-  "server": "Engage_DEV_UAT_Effectus",
-  "updates": [
-    "linux-tools-common/noble-updates 6.8.0-101.101 all [upgradable from: 6.8.0-100.100]"
-  ]
-}
