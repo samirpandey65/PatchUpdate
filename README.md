@@ -36,13 +36,13 @@ Note: Username is optional. If not provided, system will auto-detect (tries ec2-
 python cli.py check
 
 # Check updates on specific server
-python cli.py check --server 16_Labels_DEV_QA_Lapine
+python cli.py check --server Server_Name
 
 # Install updates on all servers
 python cli.py install
 
 # Install updates on specific server
-python cli.py install --server 16_Labels_PROD_Lapine
+python cli.py install --server Server_Name
 
 # Generate report (HTML and PDF)
 python cli.py report
@@ -54,7 +54,7 @@ python cli.py report --format pdf
 python cli.py report --format html
 
 # Generate report for specific server
-python cli.py report --server 16_Labels_DEV_QA_Lapine
+python cli.py report --server Server_Name
 
 # Create snapshot
 python cli.py snapshot
